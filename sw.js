@@ -1,5 +1,5 @@
 // GLS offline — service worker
-const CACHE = "gls-offline-v1";
+const CACHE = "gls-offline-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./tess-worker.js",
   "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
   "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js"];

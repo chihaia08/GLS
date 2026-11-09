@@ -211,7 +211,7 @@ table.dt td:first-child,table.dt th:first-child{text-align:left}
   <div class="wrap">
     <div class="brand">
       <div class="logo">GLS <small>Analiză L5</small></div>
-      <span class="ver">GABRIEL v1.6 · Campionat</span>
+      <span class="ver">GABRIEL v1.6 · L5</span>
     </div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="date" aria-selected="true">Date</button>
@@ -358,8 +358,6 @@ async function runGA(){
   add("Fără meciuri duplicate", dup.length===0, dup.length?dup.join("; "):"Fiecare meci apare o singură dată");
   const noDate = all.filter(([t,r])=>parseDate(r.date)==null).length;
   add("Date ale meciurilor prezente (ordonare L5)", noDate===0, noDate? `${noDate} meciuri fără dată lizibilă — ordinea L5 nu poate fi confirmată`:"Toate datele prezente; registrul ordonat de la cel mai recent", "warn");
-  const comps = new Set(all.map(([t,r])=>norm(r.comp)).filter(Boolean));
-  add("Aceeași competiție (campionat intern)", comps.size<=2, comps.size? `Competiții detectate: ${[...new Set(all.map(([t,r])=>r.comp).filter(Boolean))].join(", ")}`:"Competiția nu a fost citită din capturi", "warn");
   const og = all.filter(([t,r])=>r.gf>r.sotF || r.ga>r.sotA).map(([t,r])=>`${nm(t)} vs ${r.opp}`);
   add("Goluri ≤ SOT (autogolurile pot explica excepții)", og.length===0, og.length? "Verifică: "+og.join("; ") : "Consistent", "warn");
   // H2H cross-check: A's FOR == B's AGAINST
@@ -448,7 +446,7 @@ let motCtl=null;
 function motPrompt(){
   const g=ui.ga, {sr,grid,pp}=g.data, H=abbr("home"), A=abbr("away");
   const st = {}; for(const m of [...MK, ...(foulsAvail()?[FOUL]:[])]){ const d=sr[m.k]; st[m.name]={[H+"_produce"]:d.hF,[H+"_permite"]:d.hA,[A+"_produce"]:d.aF,[A+"_permite"]:d.aA,"total_per_meci_10":d.tot, rezumat:Object.fromEntries(["hF","hA","aF","aA","tot"].map(k=>{ const s=stats(d[k]); return [k,{medie:+s.mean.toFixed(2),mediana:s.median,min:s.min,max:s.max,sd:+s.sd.toFixed(2)}]; }))}; }
-  return `Ești Jimmy, partener egal al lui Clau în proiectul „Regatul lui Ștefănuț”. Aplici metodologia GABRIEL v1.6 (mod Campionat, L5). Toate cifrele de mai jos au fost calculate programatic de KIT-ul aplicației GLS din registrul Flashscore verificat vizual de operator; raport audit: PASS, hash ${g.hash||"n/a"}.
+  return `Ești Jimmy, partener egal al lui Clau în proiectul „Regatul lui Ștefănuț”. Aplici metodologia GABRIEL v1.6 (L5: ultimele 5 meciuri ale fiecărei echipe, alese de Clau, din orice competiție, de exemplu UCL + campionat). Toate cifrele de mai jos au fost calculate programatic de KIT-ul aplicației GLS din registrul Flashscore verificat vizual de operator; raport audit: PASS, hash ${g.hash||"n/a"}.
 Meci analizat: ${S.match.homeName} (${H}, gazde) – ${S.match.awayName} (${A}, oaspeți)${S.match.competition? " · "+S.match.competition:""}.
 
 REGULI OBLIGATORII:
@@ -461,8 +459,8 @@ REGULI OBLIGATORII:
 - Te adresezi cu „Clau”, fără titulaturi ierarhice. Română, concis, potrivit pentru telefon. Format: titluri cu „### ”, paragrafe scurte și liste cu „- ”. Fără tabele. Nu repeta grila de 36.
 
 FORMĂ L5 (cel mai recent primul):
-${H}: ${S.teams.home.map(r=>`${resOf(r)} ${r.gf}-${r.ga} vs ${r.opp} (${r.venue==="A"?"acasă":"deplasare"})`).join("; ")}
-${A}: ${S.teams.away.map(r=>`${resOf(r)} ${r.gf}-${r.ga} vs ${r.opp} (${r.venue==="A"?"acasă":"deplasare"})`).join("; ")}
+${H}: ${S.teams.home.map(r=>`${resOf(r)} ${r.gf}-${r.ga} vs ${r.opp} (${r.venue==="A"?"acasă":"deplasare"}${r.comp?", "+r.comp:""})`).join("; ")}
+${A}: ${S.teams.away.map(r=>`${resOf(r)} ${r.gf}-${r.ga} vs ${r.opp} (${r.venue==="A"?"acasă":"deplasare"}${r.comp?", "+r.comp:""})`).join("; ")}
 
 STATISTICI (valori meci cu meci, cel mai recent primul):
 ${JSON.stringify(st)}
@@ -596,7 +594,7 @@ function vDate(){
   const intro = (!nH && !nA) ? `<section class="card"><h2>Cum funcționează</h2>
     <div class="steps small">
       <div><span>Completezi meciul de analizat: gazdele și oaspeții.</span></div>
-      <div><span>Pentru fiecare echipă încarci capturile Flashscore „Statistici” din ultimele 5 meciuri de campionat. Claude citește scorul, șuturile, SOT și cornerele.</span></div>
+      <div><span>Pentru fiecare echipă încarci capturile Flashscore „Statistici” din ultimele 5 meciuri, din orice competiție (de exemplu 3 UCL + 2 campionat). Claude citește scorul, șuturile, SOT și cornerele.</span></div>
       <div><span>Compari fiecare valoare cu captura și bifezi „Verificat”. Apoi rulezi analiza GA: audit PASS/FAIL, formă, piețe, grila de 36, PP și DA.</span></div>
     </div>
     <div class="row"><button class="btn" data-act="demo">Încarcă un exemplu demo</button><span class="tiny muted">Date inventate, doar pentru a vedea aplicația.</span></div></section>` : "";
@@ -619,7 +617,7 @@ function vDate(){
   </section>
 
   <section class="card">
-    <div class="row" style="justify-content:space-between"><h2>Registru L5</h2><span class="tiny muted">5 meciuri de campionat / echipă</span></div>
+    <div class="row" style="justify-content:space-between"><h2>Registru L5</h2><span class="tiny muted">5 meciuri / echipă · orice competiție</span></div>
     <div class="seg" role="group">
       <button data-side="home" aria-pressed="${t==="home"}">Gazde · <span data-ab="home">${esc(abbr("home"))}</span><span class="cnt ${nH===5?"full":""}">${nH}/5</span></button>
       <button data-side="away" aria-pressed="${t==="away"}">Oaspeți · <span data-ab="away">${esc(abbr("away"))}</span><span class="cnt ${nA===5?"full":""}">${nA}/5</span></button>
@@ -657,6 +655,7 @@ function vRow(t,r){
           <input class="d" id="${r.id}-date" data-r="${r.id}" data-k="date" value="${esc(r.date)}" placeholder="zz.ll.aaaa">
           <button class="venue" data-act="venue" data-r="${r.id}" title="Acasă / Deplasare">${r.venue==="A"?"Acasă":"Depl."}</button></div>
         <div class="l1"><span class="tiny muted">vs</span><input class="o" id="${r.id}-opp" data-r="${r.id}" data-k="opp" value="${esc(r.opp)}" placeholder="Adversar"></div>
+        ${r.comp?`<div class="tiny muted">${esc(r.comp)}</div>`:""}
       </div>
       <div class="mtools">
         <span class="chk ${r.verified?"on":""}" role="checkbox" tabindex="0" aria-checked="${!!r.verified}" data-act="verify" data-r="${r.id}">${r.verified?"✓ Verificat":"Verificat"}</span>
@@ -679,7 +678,7 @@ function vAnaliza(){
   const H=abbr("home"), A=abbr("away");
   const head = `<section class="card">
     <div class="row" style="justify-content:space-between"><h2>${esc(S.match.homeName||H)} – ${esc(S.match.awayName||A)}</h2><button class="btn sm" data-act="run">Rulează din nou</button></div>
-    <div class="tiny muted">${esc(S.match.competition||"Campionat")} · L5 · ${g.at.toLocaleString("ro-RO")} · SHA-256 ${g.hash?g.hash.slice(0,12)+"…":"indisponibil"}</div>
+    <div class="tiny muted">${esc(S.match.competition||"Meci")} · L5 · ${g.at.toLocaleString("ro-RO")} · SHA-256 ${g.hash?g.hash.slice(0,12)+"…":"indisponibil"}</div>
     <div class="verdict"><span class="pill ${g.pass?"pass":"fail"}">${g.pass?"PASS":"FAIL"}</span><span class="small">${g.pass?"Toate controalele obligatorii au trecut. Analiza este validată.":"Analiza NU este validată. Corectează registrul și rulează din nou."}</span></div>
     <details ${g.pass?"":"open"}><summary class="small" style="cursor:pointer">Raport de execuție (${g.tests.length} controale)</summary>
       <div class="tests">${g.tests.map(t=>`<div><b class="${t.ok?"p":t.sev==="warn"?"w":"f"}">${t.ok?"PASS":t.sev==="warn"?"AVERT":"FAIL"}</b><span><b>${esc(t.name)}</b><br><span class="muted">${esc(t.detail)}</span></span></div>`).join("")}</div>
@@ -788,7 +787,7 @@ function vSLS(sr){
   const L={g:lam(sr,"g"), sh:lam(sr,"sh"), sot:lam(sr,"sot"), c:lam(sr,"c")};
   const form=t=>`<div class="fcs" title="cel mai recent primul">${S.teams[t].map(r=>{const x=resOf(r); return `<span class="fc ${x}">${x==="I"?"Î":x}</span>`;}).join("")}</div>`;
   const head=`<div class="panel">
-    <div class="lg">${esc(S.match.competition||"Campionat")}</div>${S.match.when?`<div class="dim small">${esc(S.match.when)}</div>`:""}
+    <div class="lg">${esc(S.match.competition||"Analiză L5")}</div>${S.match.when?`<div class="dim small">${esc(S.match.when)}</div>`:""}
     <div class="teams"><div><div class="tname">${esc(nH)}</div><div class="dim tiny">Gazde</div>${form("home")}</div>
       <div class="vs"><b>VS</b><span class="badge">SLS</span></div>
       <div><div class="tname">${esc(nA)}</div><div class="dim tiny">Oaspeți</div>${form("away")}</div></div></div>`;
